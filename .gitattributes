@@ -1,0 +1,2 @@
+# Uplink backup: keep the JSON exactly as written (its checksums are in manifest.json)
+uplink-backup/*.json text eol=lf

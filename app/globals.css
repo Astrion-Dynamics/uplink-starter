@@ -1,0 +1,27 @@
+@import "tailwindcss";
+@import "./uplink-theme.css";
+
+/*
+ * The look comes from Uplink → Workspace → Theme. Use the theme's classes
+ * (bg-primary, text-text, font-heading, text-h1, px-gutter, max-w-site …, listed
+ * at the top of uplink-theme.css) and never a hard-coded colour or font, so a
+ * change in Uplink reaches every page without a deploy.
+ */
+
+/* Text Uplink sends as HTML (legal pages, blog posts): headings come from <UplinkTheme base />. */
+.site-prose > * + * {
+  margin-top: 1em;
+}
+.site-prose ul {
+  list-style: disc;
+  padding-left: 1.5em;
+}
+.site-prose ol {
+  list-style: decimal;
+  padding-left: 1.5em;
+}
+.site-prose h2,
+.site-prose h3 {
+  margin-top: 1.75em;
+  scroll-margin-top: 6rem;
+}

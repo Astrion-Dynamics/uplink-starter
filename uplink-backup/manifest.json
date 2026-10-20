@@ -1,0 +1,20 @@
+{
+  "counts": {
+    "content": 0,
+    "documents": 0,
+    "files": 0,
+    "media": 0,
+    "schemas": 0,
+    "settings": 0
+  },
+  "dataAsOf": null,
+  "clientId": "",
+  "files": [],
+  "formatVersion": 1,
+  "host": "",
+  "omitted": {
+    "privateMedia": 0,
+    "unlistedDocuments": 0,
+    "unresolvedMediaReferences": 0
+  }
+}

@@ -1,0 +1,110 @@
+/*
+ * app/uplink-theme.css — written by the Uplink installer.
+ *
+ * Maps Tailwind v4 utilities onto the theme set in Uplink → Workspace → Theme,
+ * whose values <UplinkTheme /> puts on every page as --uplink-* variables:
+ *
+ *   bg-primary text-on-primary hover:bg-primary-hover bg-primary-subtle
+ *   bg-background bg-surface text-text text-text-muted border-border
+ *   text-link hover:text-link-hover
+ *   bg-role-{key} text-role-{key}-on hover:bg-role-{key}-hover   (the site's colour roles)
+ *   font-heading font-body font-mono
+ *   text-h1 … text-h6 text-lead text-body text-small   (size, line height, weight, tracking)
+ *   gap-items p-card px-gutter py-section p-step-md gap-step-lg
+ *   max-w-site max-w-readable rounded-sm rounded-md rounded-lg rounded-button
+ *
+ * Import it once, after Tailwind, in your global stylesheet:
+ *
+ *   @import "tailwindcss";
+ *   @import "./uplink-theme.css";
+ *
+ * The second value in each var() is used only when Uplink sends no value for
+ * it: the theme as it was when this file was written. Uplink's own variable
+ * names never change; write this file again to refresh the fallbacks.
+ *
+ * A colour role is the site's own name for what one kind of element is painted
+ * with (the main button, a card's arrow), so a theme can recolour it alone.
+ * Paint those elements with their role, never with a palette colour directly;
+ * a new role's three lines come from define_color_role and go inside the block.
+ */
+
+@theme inline {
+  --color-primary: var(--uplink-color-primary, #2563eb);
+  --color-on-primary: var(--uplink-color-on-primary, #ffffff);
+  --color-primary-hover: var(--uplink-color-primary-hover, #0b48cf);
+  --color-primary-subtle: var(--uplink-color-primary-subtle, #e5ecfd);
+  --color-secondary: var(--uplink-color-secondary, #0f766e);
+  --color-on-secondary: var(--uplink-color-on-secondary, #ffffff);
+  --color-secondary-hover: var(--uplink-color-secondary-hover, #115c56);
+  --color-secondary-subtle: var(--uplink-color-secondary-subtle, #e2efee);
+  --color-tertiary: var(--uplink-color-tertiary, #f59e0b);
+  --color-on-tertiary: var(--uplink-color-on-tertiary, #111111);
+  --color-tertiary-hover: var(--uplink-color-tertiary-hover, #fbc17d);
+  --color-tertiary-subtle: var(--uplink-color-tertiary-subtle, #fef3e2);
+  --color-background: var(--uplink-color-background, #ffffff);
+  --color-surface: var(--uplink-color-surface, #f6f7f9);
+  --color-text: var(--uplink-color-text, #111827);
+  --color-text-muted: var(--uplink-color-text-muted, #4b5563);
+  --color-border: var(--uplink-color-border, #868e99);
+  --color-success: var(--uplink-color-success, #15803d);
+  --color-warning: var(--uplink-color-warning, #a16207);
+  --color-danger: var(--uplink-color-danger, #b91c1c);
+  --color-info: var(--uplink-color-info, #1d4ed8);
+  --color-link: var(--uplink-color-link, #2563eb);
+  --color-link-hover: var(--uplink-color-link-hover, #0b48cf);
+  --font-heading: var(--uplink-font-heading, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
+  --font-body: var(--uplink-font-body, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
+  --font-mono: var(--uplink-font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  --text-h1: var(--uplink-text-h1, clamp(2.4881rem, 2.1183rem + 1.6435vw, 3.4331rem));
+  --text-h1--line-height: var(--uplink-leading-h1, 1.1);
+  --text-h1--font-weight: var(--uplink-weight-h1, 700);
+  --text-h1--letter-spacing: var(--uplink-tracking-h1, -0.02em);
+  --text-h2: var(--uplink-text-h2, clamp(2.0737rem, 1.8104rem + 1.1707vw, 2.7469rem));
+  --text-h2--line-height: var(--uplink-leading-h2, 1.15);
+  --text-h2--font-weight: var(--uplink-weight-h2, 700);
+  --text-h2--letter-spacing: var(--uplink-tracking-h2, -0.01em);
+  --text-h3: var(--uplink-text-h3, clamp(1.7281rem, 1.5445rem + 0.8163vw, 2.1975rem));
+  --text-h3--line-height: var(--uplink-leading-h3, 1.2);
+  --text-h3--font-weight: var(--uplink-weight-h3, 600);
+  --text-h3--letter-spacing: var(--uplink-tracking-h3, 0em);
+  --text-h4: var(--uplink-text-h4, clamp(1.44rem, 1.3155rem + 0.5533vw, 1.7581rem));
+  --text-h4--line-height: var(--uplink-leading-h4, 1.25);
+  --text-h4--font-weight: var(--uplink-weight-h4, 600);
+  --text-h4--letter-spacing: var(--uplink-tracking-h4, 0em);
+  --text-h5: var(--uplink-text-h5, clamp(1.2rem, 1.1193rem + 0.3587vw, 1.4063rem));
+  --text-h5--line-height: var(--uplink-leading-h5, 1.3);
+  --text-h5--font-weight: var(--uplink-weight-h5, 600);
+  --text-h5--letter-spacing: var(--uplink-tracking-h5, 0em);
+  --text-h6: var(--uplink-text-h6, clamp(1rem, 0.9511rem + 0.2174vw, 1.125rem));
+  --text-h6--line-height: var(--uplink-leading-h6, 1.4);
+  --text-h6--font-weight: var(--uplink-weight-h6, 600);
+  --text-h6--letter-spacing: var(--uplink-tracking-h6, 0em);
+  --text-lead: var(--uplink-text-lead, clamp(1.2rem, 1.1193rem + 0.3587vw, 1.4063rem));
+  --text-lead--line-height: var(--uplink-leading-lead, 1.5);
+  --text-lead--font-weight: var(--uplink-weight-lead, 400);
+  --text-lead--letter-spacing: var(--uplink-tracking-lead, 0em);
+  --text-body: var(--uplink-text-body, clamp(1rem, 0.9511rem + 0.2174vw, 1.125rem));
+  --text-body--line-height: var(--uplink-leading-body, 1.6);
+  --text-body--font-weight: var(--uplink-weight-body, 400);
+  --text-body--letter-spacing: var(--uplink-tracking-body, 0em);
+  --text-small: var(--uplink-text-small, clamp(0.8331rem, 0.807rem + 0.1163vw, 0.9rem));
+  --text-small--line-height: var(--uplink-leading-small, 1.5);
+  --text-small--font-weight: var(--uplink-weight-small, 400);
+  --text-small--letter-spacing: var(--uplink-tracking-small, 0em);
+  --spacing-step-xs: var(--uplink-space-xs, 0.25rem);
+  --spacing-step-sm: var(--uplink-space-sm, 0.5rem);
+  --spacing-step-md: var(--uplink-space-md, 1rem);
+  --spacing-step-lg: var(--uplink-space-lg, 1.5rem);
+  --spacing-step-xl: var(--uplink-space-xl, 2.5rem);
+  --spacing-step-2xl: var(--uplink-space-2xl, 4rem);
+  --spacing-items: var(--uplink-gap, 1rem);
+  --spacing-card: var(--uplink-pad, 1.5rem);
+  --spacing-gutter: var(--uplink-gutter, clamp(1rem, 0.6087rem + 1.7391vw, 2rem));
+  --spacing-section: var(--uplink-section, clamp(3.5rem, 2.1304rem + 6.087vw, 7rem));
+  --container-site: var(--uplink-container, 75rem);
+  --container-readable: var(--uplink-prose, 68ch);
+  --radius-sm: var(--uplink-radius-sm, 0.25rem);
+  --radius-md: var(--uplink-radius-md, 0.5rem);
+  --radius-lg: var(--uplink-radius-lg, 1rem);
+  --radius-button: var(--uplink-radius-button, 0.5rem);
+}

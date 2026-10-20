@@ -1,0 +1,22 @@
+# dependencies
+/node_modules
+
+# Next.js
+/.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Secrets stay in the host's environment variables (Vercel → Settings →
+# Environment Variables), never in the repository.
+.env
+.env*.local
+
+# Vercel
+.vercel
+
+# A backup run in progress (npm run uplink:backup); the backup itself is committed.
+/.uplink-backup-incoming/
+/.uplink-backup-previous/
+
+.DS_Store
