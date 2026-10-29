@@ -8,7 +8,8 @@
  *   an image, so without this every new visitor waits on Uplink for every
  *   image; with it, only the first visitor to ask for a size does.
  * - w, h and q are forwarded, so each srcset entry is a real, smaller file
- *   (and w=1280 on a video is its phone copy); poster=1 is a video's poster still.
+ *   (and w=1280 on a video is its phone copy); poster=1 is a video's poster still,
+ *   and pt the moment an editor chose for it.
  * - Range is forwarded, so a phone can start a video before it has all of it.
  * - Only versioned URLs (?v=) are served: their bytes never change, which is
  *   what makes keeping them at the edge safe.
@@ -17,7 +18,7 @@
  *   reach. Serve those from a route of your own that checks who is signed in.
  */
 
-const FORWARDED_PARAMS = ['v', 'w', 'h', 'q', 'original', 'poster'];
+const FORWARDED_PARAMS = ['v', 'w', 'h', 'q', 'original', 'poster', 'pt'];
 const FORWARDED_REQUEST_HEADERS = ['accept', 'range', 'if-none-match'];
 const PASSED_RESPONSE_HEADERS = [
   'content-type',
