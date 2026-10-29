@@ -16,6 +16,8 @@ what the site still needs and what to do next.
   `getUplinkJson` from `@/lib/uplink-backup`. Text written into a component is text nobody can edit.
 - **Every image from Uplink uses `<UplinkImage asset={…} sizes="…" />`** (`lib/uplink-image.tsx`), with a
   real `sizes`, and `priority` only on the image a page opens on. Never a bare `<img>` or a media field's `url`.
+  A background or hero video uses `<UplinkVideo asset={…} sizes="100vw" />` from the same file, never a bare
+  `<video poster>`: it gives phones the 720p copy and a poster sized for their screen.
 - **Every page** exports `generateMetadata = () => uplinkMetadata('/the-path', {}, getUplinkJson)` and renders
   `<UplinkPageSeo path="/the-path" />` and `<UplinkPageQA path="/the-path" />` (`lib/uplink-seo.tsx`). Then
   register the page in Uplink (`register_pages`).

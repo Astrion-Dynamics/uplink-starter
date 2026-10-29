@@ -1,6 +1,7 @@
 'use client';
 
 import Image, { type ImageProps } from 'next/image';
+import type { CSSProperties, VideoHTMLAttributes } from 'react';
 
 /**
  * lib/uplink-image.tsx — written by the Uplink installer.
@@ -73,8 +74,9 @@ export function uplinkImageSrc(asset: UplinkImageAsset): string | null {
  */
 export function uplinkImageLoader({ src, width, quality }: { src: string; width: number; quality?: number }): string {
   if (src.startsWith(PROXY_PREFIX)) {
-    // The editor chose "Serve original": the same bytes at every width.
-    if (src.includes('original=1')) return src;
+    // The editor chose "Serve original": the same bytes at every width. A
+    // video's poster is a still Uplink made, so it is sized all the same.
+    if (src.includes('original=1') && !src.includes('poster=1')) return src;
     return src + '&w=' + width + '&q=' + (quality ?? 75);
   }
   return '/_next/image?url=' + encodeURIComponent(src) + '&w=' + width + '&q=75';
@@ -116,5 +118,90 @@ export function UplinkImage({ asset, sizes, alt, fill, width, height, unoptimize
       // Lets Uplink's site check see the image came through here (the Uplink Score).
       data-uplink-image={asset.id}
     />
+  );
+}
+
+/** A video media field: an image asset's keys plus the video's own copies. */
+export interface UplinkVideoAsset extends UplinkImageAsset {
+  /** The poster still Uplink takes from the video (versioned URL with &poster=1). */
+  poster_url?: string | null;
+  /** The phone copy (720p), or null when there is none. */
+  mobile_url?: string | null;
+  /** The desktop copy (1080p), or null when there is none. */
+  desktop_url?: string | null;
+}
+
+export type UplinkVideoProps = Omit<VideoHTMLAttributes<HTMLVideoElement>, 'src' | 'poster' | 'children'> & {
+  asset: UplinkVideoAsset;
+  /**
+   * How wide the video is shown, e.g. "100vw" for a full-width hero. It picks
+   * the poster file each screen downloads, exactly like UplinkImage's sizes.
+   */
+  sizes: string;
+  /** The video the page opens on (a hero): its poster loads first, never lazily. */
+  priority?: boolean;
+};
+
+/** Fills the positioned parent, cropped to cover it. */
+const FILL: CSSProperties = { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' };
+
+/**
+ * A background or hero video from Uplink. It fills its parent, which must be
+ * positioned (relative or absolute) and sized, and crops to cover it.
+ *
+ *   1. The poster is a sized image, not <video poster>: a poster attribute
+ *      has no srcset, so every phone downloaded the full 1920 px still. Here
+ *      it is an image with a srcset of Uplink's poster copies, under the
+ *      video, with its blurred preview; the video covers it once it plays.
+ *   2. Phones get the 720p copy, everyone else the 1080p copy, and the
+ *      original is the last resort (a copy that fails falls through to it).
+ *   3. Muted, looping, inline and autoplaying by default, and hidden from
+ *      screen readers unless given an aria-label: a loop that only sets a
+ *      mood is decoration. Pass any of these props to change them.
+ *
+ * className and style go on both the poster and the video, e.g. "-z-10".
+ */
+export function UplinkVideo({ asset, sizes, priority, className, style, ...rest }: UplinkVideoProps) {
+  const src = uplinkImageSrc(asset);
+  if (!src) return null;
+  const poster = asset.poster_url ? uplinkImageSrc({ id: asset.id, image_url: asset.poster_url }) : null;
+  // Copies exist only behind this site's proxy; a backed-up file is the original alone.
+  const proxied = src.startsWith(PROXY_PREFIX);
+  const fill = { ...FILL, ...style };
+
+  return (
+    <>
+      {poster && (
+        <Image
+          src={poster}
+          alt=""
+          aria-hidden
+          fill
+          sizes={sizes}
+          loader={uplinkImageLoader}
+          priority={priority}
+          placeholder={asset.blur_data_url ? 'blur' : 'empty'}
+          blurDataURL={asset.blur_data_url ?? undefined}
+          className={className}
+          style={fill}
+          data-uplink-image={asset.id}
+        />
+      )}
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload={priority ? 'auto' : 'metadata'}
+        aria-hidden={rest['aria-label'] ? undefined : true}
+        {...rest}
+        className={className}
+        style={fill}
+      >
+        {proxied && asset.mobile_url && <source media="(max-width: 767px)" src={src + '&w=1280'} type="video/mp4" />}
+        {proxied && asset.desktop_url && <source src={src + '&w=1920'} type="video/mp4" />}
+        <source src={src} type={asset.mime_type ?? undefined} />
+      </video>
+    </>
   );
 }
