@@ -60,7 +60,12 @@ export const getLegalPage = cache((slug: string) =>
 
 const UPLINK_IMAGE_PATH = /\/api\/v1\/media\/([0-9a-f-]{36})\/image$/i;
 
-/** The favicon through this site's own media route (the same path <UplinkImage> uses), 64 px wide. */
+/**
+ * The favicon's address: /favicon.ico (app/favicon.ico/route.ts), where the
+ * Vercel dashboard and Google look for it, with its media id and version so a
+ * browser fetches a new one when it changes in Uplink (and the Uplink Score can
+ * tell it is the Business Info favicon). A backed-up copy is linked as is.
+ */
 export function faviconHref(asset: UplinkImageAsset): string | null {
   const candidate = asset.image_url ?? asset.url;
   if (!candidate) return null;
@@ -72,7 +77,7 @@ export function faviconHref(asset: UplinkImageAsset): string | null {
     return null;
   }
   const match = UPLINK_IMAGE_PATH.exec(parsed.pathname);
-  if (!match || !parsed.searchParams.has('v')) return null;
-  const href = '/api/media/' + match[1] + parsed.search;
-  return parsed.searchParams.has('original') ? href : href + '&w=64';
+  const version = parsed.searchParams.get('v');
+  if (!match || !version) return null;
+  return '/favicon.ico?media=' + match[1] + '&v=' + version;
 }

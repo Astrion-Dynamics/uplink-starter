@@ -7,7 +7,8 @@ import UplinkTheme from '@/lib/uplink-theme';
 import './globals.css';
 
 // Each page's title, description and share card come from uplinkMetadata()
-// (Uplink → Workspace → Search & sharing); the favicon from Business Info.
+// (Uplink → Workspace → Search & sharing); the favicon from Business Info,
+// served at /favicon.ico by app/favicon.ico/route.ts.
 export async function generateMetadata(): Promise<Metadata> {
   const business = await getBusinessInfo();
   const icon = business?.favicon ? faviconHref(business.favicon) : null;
