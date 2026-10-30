@@ -1,7 +1,7 @@
 'use client';
 
 import Image, { type ImageProps } from 'next/image';
-import type { CSSProperties, VideoHTMLAttributes } from 'react';
+import { useEffect, useState, type CSSProperties, type VideoHTMLAttributes } from 'react';
 
 /**
  * lib/uplink-image.tsx — written by the Uplink installer.
@@ -148,6 +148,26 @@ export type UplinkVideoProps = Omit<VideoHTMLAttributes<HTMLVideoElement>, 'src'
 const FILL: CSSProperties = { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' };
 
 /**
+ * Calls start once the page has loaded and the browser is idle. Returns the
+ * cleanup for useEffect.
+ */
+function afterPageLoad(start: () => void): () => void {
+  let idle = 0;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const schedule = () => {
+    if (typeof requestIdleCallback === 'function') idle = requestIdleCallback(start, { timeout: 2000 });
+    else timer = setTimeout(start, 200);
+  };
+  if (document.readyState === 'complete') schedule();
+  else window.addEventListener('load', schedule, { once: true });
+  return () => {
+    window.removeEventListener('load', schedule);
+    if (idle) cancelIdleCallback(idle);
+    if (timer) clearTimeout(timer);
+  };
+}
+
+/**
  * A background or hero video from Uplink. It fills its parent, which must be
  * positioned (relative or absolute) and sized, and crops to cover it.
  *
@@ -160,13 +180,20 @@ const FILL: CSSProperties = { position: 'absolute', inset: 0, width: '100%', hei
  *   3. Muted, looping, inline and autoplaying by default, and hidden from
  *      screen readers unless given an aria-label: a loop that only sets a
  *      mood is decoration. Pass any of these props to change them.
+ *   4. The video starts once the page has loaded; until then the poster
+ *      shows. A hero video is megabytes the page does not need to open: an
+ *      autoplaying one started at once competes with the page for the
+ *      network, and Lighthouse, which stops at load, logs the cut-off download
+ *      as a console error. A video without a poster starts at once.
  *
  * className and style go on both the poster and the video, e.g. "-z-10".
  */
 export function UplinkVideo({ asset, sizes, priority, className, style, ...rest }: UplinkVideoProps) {
   const src = uplinkImageSrc(asset);
-  if (!src) return null;
   const poster = asset.poster_url ? uplinkImageSrc({ id: asset.id, image_url: asset.poster_url }) : null;
+  const [started, setStarted] = useState(!poster);
+  useEffect(() => (started ? undefined : afterPageLoad(() => setStarted(true))), [started]);
+  if (!src) return null;
   // Copies exist only behind this site's proxy; a backed-up file is the original alone.
   const proxied = src.startsWith(PROXY_PREFIX);
   const fill = { ...FILL, ...style };
@@ -190,21 +217,23 @@ export function UplinkVideo({ asset, sizes, priority, className, style, ...rest 
           data-uplink-image={asset.id}
         />
       )}
-      <video
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload={priority ? 'auto' : 'metadata'}
-        aria-hidden={rest['aria-label'] ? undefined : true}
-        {...rest}
-        className={className}
-        style={fill}
-      >
-        {proxied && asset.mobile_url && <source media="(max-width: 767px)" src={src + '&w=1280'} type="video/mp4" />}
-        {proxied && asset.desktop_url && <source src={src + '&w=1920'} type="video/mp4" />}
-        <source src={src} type={asset.mime_type ?? undefined} />
-      </video>
+      {started && (
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload={priority ? 'auto' : 'metadata'}
+          aria-hidden={rest['aria-label'] ? undefined : true}
+          {...rest}
+          className={className}
+          style={fill}
+        >
+          {proxied && asset.mobile_url && <source media="(max-width: 767px)" src={src + '&w=1280'} type="video/mp4" />}
+          {proxied && asset.desktop_url && <source src={src + '&w=1920'} type="video/mp4" />}
+          <source src={src} type={asset.mime_type ?? undefined} />
+        </video>
+      )}
     </>
   );
 }
