@@ -19,7 +19,8 @@ import type { CSSProperties, VideoHTMLAttributes } from 'react';
  *   3. A blurred preview in its exact space, from blur_data_url.
  *
  * Pass priority to the image a page opens on (the hero, the first row of a
- * grid); everything else loads lazily as it scrolls into view.
+ * grid); everything else loads lazily as it scrolls into view. priority also
+ * sets fetchpriority="high": next/image's priority alone only preloads it.
  *
  * Never render a media field's url: it is a signed link to the uploaded
  * original — often a 5–10 MB phone photo. This component ignores it.
@@ -95,7 +96,7 @@ export type UplinkImageProps = Omit<ImageProps, 'src' | 'alt' | 'loader' | 'plac
   alt?: string;
 };
 
-export function UplinkImage({ asset, sizes, alt, fill, width, height, unoptimized, ...rest }: UplinkImageProps) {
+export function UplinkImage({ asset, sizes, alt, fill, width, height, unoptimized, fetchPriority, ...rest }: UplinkImageProps) {
   const src = uplinkImageSrc(asset);
   if (!src) return null;
 
@@ -115,6 +116,7 @@ export function UplinkImage({ asset, sizes, alt, fill, width, height, unoptimize
       unoptimized={unoptimized || SENT_AS_UPLOADED.test(asset.mime_type ?? '')}
       placeholder={asset.blur_data_url ? 'blur' : 'empty'}
       blurDataURL={asset.blur_data_url ?? undefined}
+      fetchPriority={fetchPriority ?? (rest.priority ? 'high' : undefined)}
       // Lets Uplink's site check see the image came through here (the Uplink Score).
       data-uplink-image={asset.id}
     />
@@ -180,6 +182,7 @@ export function UplinkVideo({ asset, sizes, priority, className, style, ...rest 
           sizes={sizes}
           loader={uplinkImageLoader}
           priority={priority}
+          fetchPriority={priority ? 'high' : undefined}
           placeholder={asset.blur_data_url ? 'blur' : 'empty'}
           blurDataURL={asset.blur_data_url ?? undefined}
           className={className}
