@@ -1,10 +1,7 @@
 /** @component UplinkPage */
 export default function UplinkPage() {
-  const uplinkHost = process.env.UPLINK_HOST;
-
-  if (!uplinkHost) {
-    throw new Error('Missing UPLINK_HOST. Add it to your .env.local file.');
-  }
+  // Set UPLINK_HOST only to point the site at another Uplink (a preview or local one).
+  const uplinkHost = process.env.UPLINK_HOST || 'https://www.uplinkcms.com';
 
   return (
     <main style={{ width: '100%', height: '100%' }}>

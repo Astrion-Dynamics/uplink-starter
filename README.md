@@ -10,9 +10,9 @@ Uplink walks you through each step on its **Launch** page. In short:
 
 1. **Put this code on GitHub.** If you used the "Deploy to Vercel" button, it is already there.
 2. **Put it on Vercel.** Import this repository at https://vercel.com/new, or use the "Deploy to Vercel" button.
-3. **Give the site its key.** In Vercel → your project → **Settings → Environment Variables**, add:
-   - `UPLINK_HOST` = `https://www.uplinkcms.com`
-   - `UPLINK_API_KEY` = the site key from Uplink's Launch page (it starts with `upl_`)
+3. **Give the site its key.** In Vercel → your project → **Settings → Environment Variables**, add
+   `UPLINK_API_KEY` = the site key from Uplink's Launch page (it starts with `upl_`).
+   Uplink's address is built in; set `UPLINK_HOST` only to point the site at a different Uplink.
 
    Then **Redeploy** (Deployments → the latest one → ⋯ → Redeploy): Vercel reads these when it builds.
 4. **Turn on instant updates.** In Uplink → **API Keys → Webhooks → Connect**, copy the secret it shows into

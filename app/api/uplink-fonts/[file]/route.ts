@@ -18,10 +18,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ file
   const { file } = await params;
   if (!FONT_FILE.test(file)) return new Response('Not found', { status: 404, headers: NO_STORE });
 
-  const host = process.env.UPLINK_HOST;
+  const host = process.env.UPLINK_HOST || 'https://www.uplinkcms.com';
   const apiKey = process.env.UPLINK_API_KEY;
-  if (!host || !apiKey) {
-    return new Response('UPLINK_HOST and UPLINK_API_KEY must be set', { status: 500, headers: NO_STORE });
+  if (!apiKey) {
+    return new Response('UPLINK_API_KEY must be set', { status: 500, headers: NO_STORE });
   }
 
   const headers = new Headers({ Authorization: 'Bearer ' + apiKey });

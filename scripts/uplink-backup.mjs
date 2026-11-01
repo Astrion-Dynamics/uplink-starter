@@ -12,7 +12,8 @@
 //       uplink-backup/private-media/ (never web-served) and copied with the key
 //   npm run uplink:backup -- --unlisted-documents=<id>,<id>
 //
-// Reads UPLINK_HOST and UPLINK_API_KEY (and UPLINK_PROTECTION_BYPASS on a
+// Reads UPLINK_API_KEY, UPLINK_HOST (optional; https://www.uplinkcms.com when unset)
+// and UPLINK_PROTECTION_BYPASS (only on a
 // protected preview) from the environment or .env.local. Commit
 // uplink-backup/ and public/uplink-backup/ afterwards: the repository is the
 // backup, and Uplink keeps no copy.
@@ -112,13 +113,13 @@ async function main() {
   // The environment wins, but an empty variable does not hide the file's value.
   const setting = (name) => process.env[name] || fileEnv[name] || '';
   const env = {
-    UPLINK_HOST: setting('UPLINK_HOST'),
+    UPLINK_HOST: setting('UPLINK_HOST') || 'https://www.uplinkcms.com',
     UPLINK_API_KEY: setting('UPLINK_API_KEY'),
     UPLINK_PROTECTION_BYPASS: setting('UPLINK_PROTECTION_BYPASS'),
   };
   const host = env.UPLINK_HOST;
   const key = env.UPLINK_API_KEY;
-  if (!host || !key) fail('UPLINK_HOST and UPLINK_API_KEY must be set (in the environment or ' + args.envFile + ').');
+  if (!key) fail('UPLINK_API_KEY must be set (in the environment or ' + args.envFile + ').');
 
   const url = new URL('/api/v1/backup', host);
   if (args.dryRun) url.searchParams.set('dry_run', 'true');

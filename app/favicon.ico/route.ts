@@ -64,9 +64,9 @@ export async function GET() {
     return notFound();
   }
   const asset = source(favicon?.image_url);
-  const host = process.env.UPLINK_HOST;
+  const host = process.env.UPLINK_HOST || 'https://www.uplinkcms.com';
   const apiKey = process.env.UPLINK_API_KEY;
-  if (!asset || !host || !apiKey) return notFound();
+  if (!asset || !apiKey) return notFound();
 
   const upstream = new URL('/api/v1/media/' + asset.id + '/image', host);
   upstream.searchParams.set('v', asset.version);

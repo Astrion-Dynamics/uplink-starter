@@ -180,7 +180,8 @@ export async function getUplinkJson<T>(
   pathname: string,
   options: UplinkRequestOptions = {}
 ): Promise<T> {
-  const host = getRequiredEnv('UPLINK_HOST', process.env.UPLINK_HOST);
+  // Uplink's address is built in; UPLINK_HOST only overrides it (a preview or local Uplink).
+  const host = process.env.UPLINK_HOST || 'https://www.uplinkcms.com';
   const apiKey = getRequiredEnv('UPLINK_API_KEY', process.env.UPLINK_API_KEY);
   const { searchParams, headers, next, ...init } = options;
   const url = new URL(pathname, host.endsWith('/') ? host : host + '/');
