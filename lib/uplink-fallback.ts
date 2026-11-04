@@ -88,6 +88,19 @@ export interface BackupManifest {
    * from their backed-up copy too. Absent means off.
    */
   wideImagesFromBackup?: true;
+  /**
+   * Where nested Media folders sit, for ?folder=…&include_subfolders=true: each
+   * folder that sits inside another, with the one it sits in. A folder not
+   * listed is at the top level. Absent when no backed-up file is in a nested
+   * folder.
+   */
+  mediaFolders?: BackupMediaFolder[];
+}
+
+/** A Media folder that sits inside another one. */
+export interface BackupMediaFolder {
+  name: string;
+  parent_name: string;
 }
 
 /** A content item, as GET /api/v1/content returns it. */
@@ -478,6 +491,7 @@ function answerMedia(snapshot: BackupSnapshot, params?: Record<string, SearchPar
   const folder = param(params, 'folder');
   const mimeType = param(params, 'mime_type');
   const includePrivate = param(params, 'include_private') === 'true';
+  const includeSubfolders = param(params, 'include_subfolders') === 'true';
 
   let assets: BackupMediaAsset[];
   if (idParam !== null) {
@@ -488,10 +502,29 @@ function answerMedia(snapshot: BackupSnapshot, params?: Record<string, SearchPar
       (asset) => asset.status === 'published' && (includePrivate || !asset.is_private),
     );
   }
-  if (folder !== null) assets = assets.filter((asset) => asset.folders.includes(folder));
+  if (folder !== null) {
+    const names = includeSubfolders ? folderAndSubfolders(snapshot.manifest.mediaFolders ?? [], folder) : new Set([folder]);
+    assets = assets.filter((asset) => asset.folders.some((name) => names.has(name)));
+  }
   if (mimeType !== null) assets = assets.filter((asset) => asset.mime_type === mimeType);
 
   return { kind: 'ok', body: { data: [...assets].sort(byUploadedDesc) } };
+}
+
+/** The folder and every folder nested inside it, at any depth. */
+function folderAndSubfolders(placements: BackupMediaFolder[], folder: string): Set<string> {
+  const names = new Set([folder]);
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const row of placements) {
+      if (names.has(row.parent_name) && !names.has(row.name)) {
+        names.add(row.name);
+        grew = true;
+      }
+    }
+  }
+  return names;
 }
 
 function answerDocuments(snapshot: BackupSnapshot, params?: Record<string, SearchParamValue>): BackupAnswer {
