@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import type { CookieConsentConfig } from 'vanilla-cookieconsent';
 import 'vanilla-cookieconsent/dist/cookieconsent.css';
@@ -182,7 +182,6 @@ function injectAll(scripts: IntegrationScript[]) {
 // ── Consent: one signal, whichever banner gives it ──────────────────────────
 
 type Granted = Record<ConsentCategory, boolean>;
-const NOTHING_GRANTED: Granted = { necessary: true, analytics: false, marketing: false, functional: false };
 const EVERYTHING_GRANTED: Granted = { necessary: true, analytics: true, marketing: true, functional: true };
 
 type Adapter = {
@@ -614,7 +613,14 @@ function logCredit(credit: UplinkCredit) {
 
 export function UplinkIntegrationsClient({ data, credit = null }: { data: unknown; credit?: UplinkCredit | null }) {
   const pathname = usePathname();
-  const [floating, setFloating] = useState<UplinkBanner['theme'] | null>(null);
+  const parsedData = useMemo(() => parseIntegrationsData(data), [data]);
+  // The floating "Cookie settings" button: worked out from the data during
+  // render (not stored in state), so it survives a remount.
+  const bannerConsent = parsedData?.integrations.find((item) => item.consent !== null)?.consent ?? null;
+  const floating =
+    bannerConsent?.adapter === 'uplink' && (bannerConsent as UplinkBanner).floating_button
+      ? (bannerConsent as UplinkBanner).theme
+      : null;
   const onStudio = pathname === '/uplink' || pathname?.startsWith('/uplink/');
 
   useEffect(() => {
@@ -623,7 +629,7 @@ export function UplinkIntegrationsClient({ data, credit = null }: { data: unknow
 
   useEffect(() => {
     if (onStudio || started) return;
-    const parsed = parseIntegrationsData(data);
+    const parsed = parsedData;
     if (!parsed) return;
     started = true;
 
@@ -637,14 +643,11 @@ export function UplinkIntegrationsClient({ data, credit = null }: { data: unknow
     const adapter = adapterFor(consentRow?.consent ?? null);
     setActiveAdapter(adapter);
     if (!adapter) return;
-    if (consentRow?.consent?.adapter === 'uplink' && (consentRow.consent as UplinkBanner).floating_button) {
-      setFloating((consentRow.consent as UplinkBanner).theme);
-    }
     adapter.watch((granted) => {
       if (consentRow?.consent?.adapter === 'uplink') sendGoogleConsent(granted);
       injectAll(gated.filter((item) => granted[item.consent_category]).flatMap((item) => item.scripts));
     });
-  }, [data, onStudio]);
+  }, [parsedData, onStudio]);
 
   if (!floating || onStudio) return null;
   return (
