@@ -166,6 +166,8 @@ function uplinkCacheTags(
   } else if (pathname.endsWith('/seo')) {
     // Built from posts, legal pages and the business name as well.
     tags.push('uplink:seo', 'uplink:content', 'uplink:business-info');
+  } else if (pathname.endsWith('/forms')) {
+    tags.push('uplink:forms');
   } else {
     // /content and /schemas both read content_items.
     tags.push('uplink:content');
