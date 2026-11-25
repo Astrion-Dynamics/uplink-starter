@@ -12,7 +12,14 @@ import { UplinkFormClient, type UplinkFormData, type UplinkFormField } from './u
  *   <UplinkForm form="contact" />
  *
  * Uplink emails each message to the business, with Reply-To set to the
- * visitor's email, so pressing Reply answers them. Uplink keeps no copy of what
+ * visitor's email, so pressing Reply answers them. A form with hidden fields
+ * (a package, a plan) fills them from `values`, then the page URL
+ * (?package=launch), then the default set in Uplink:
+ *
+ *   <UplinkForm form="order" values={{ package: 'launch' }} />
+ *
+ * When the form is set to send visitors on (a payment link), they go there
+ * once it is sent. Uplink keeps no copy of what
  * was sent: only how often the form was seen, started and sent, which Uplink →
  * Workspace → Traffic shows. Submissions go through this site's own
  * app/api/uplink-forms/route.ts, which adds the site key on the server.
@@ -34,7 +41,8 @@ type Loader = <T>(pathname: string) => Promise<T>;
 // the server, so calling it there throws and the form never renders.
 const KEY = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const FIELD_KEY = /^[a-z][a-z0-9_]{0,39}$/;
-const KNOWN_TYPES = ['text', 'email', 'phone', 'textarea', 'select', 'checkbox'];
+const KNOWN_TYPES = ['text', 'email', 'phone', 'textarea', 'select', 'checkbox', 'hidden'];
+const PARAM = /^[A-Za-z0-9_.-]{1,40}$/;
 
 function text(value: unknown, max: number): string | null {
   return typeof value === 'string' && value.length > 0 && value.length <= max ? value : null;
@@ -60,6 +68,9 @@ export function parseUplinkForm(value: unknown): UplinkFormData | null {
       help: text(f.help, 200),
       options: Array.isArray(f.options) ? f.options.filter((o): o is string => typeof o === 'string') : null,
       width: f.width === 'half' ? 'half' : 'full',
+      value: text(f.value, 200),
+      param: typeof f.param === 'string' && PARAM.test(f.param) ? f.param : null,
+      reference: f.reference === true,
     });
   }
   if (fields.length === 0) return null;
@@ -79,9 +90,12 @@ export default async function UplinkForm({
   className,
   unstyled = false,
   fallback = null,
+  values,
 }: {
   /** The form's key in Uplink, e.g. "contact". */
   form: string;
+  /** Hidden fields' values from this page, by field key, e.g. { package: 'launch' }. */
+  values?: Record<string, string>;
   load?: Loader;
   className?: string;
   unstyled?: boolean;
@@ -96,7 +110,7 @@ export default async function UplinkForm({
     data = null;
   }
   if (!data) return <>{fallback}</>;
-  return <UplinkFormClient form={data} className={className} unstyled={unstyled} />;
+  return <UplinkFormClient form={data} className={className} unstyled={unstyled} values={values} />;
 }
 
 export { UplinkForm };

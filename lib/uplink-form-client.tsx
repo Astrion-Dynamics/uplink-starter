@@ -7,18 +7,25 @@ import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
  * half of <UplinkForm /> (lib/uplink-form.tsx), which reads and checks the form
  * on the server and hands it here. It renders the fields, counts
  * the form as seen once it scrolls into view and as started at the first
- * answer, and sends it to this site's app/api/uplink-forms route.
+ * answer, and sends it to this site's app/api/uplink-forms route. Hidden
+ * fields are never shown: each is filled from the page's `values`, the URL
+ * (?<param or key>=) or its default. When Uplink answers with a redirect_url
+ * (the form sends people on, e.g. to a payment link), the browser goes there.
  */
 
 export interface UplinkFormField {
   key: string;
   label: string;
-  type: 'text' | 'email' | 'phone' | 'textarea' | 'select' | 'checkbox' | string;
+  type: 'text' | 'email' | 'phone' | 'textarea' | 'select' | 'checkbox' | 'hidden' | string;
   required?: boolean;
   placeholder?: string | null;
   help?: string | null;
   options?: string[] | null;
   width?: 'full' | 'half';
+  /** hidden only: the default, the URL parameter to read (else the key), and whether Uplink makes the value. */
+  value?: string | null;
+  param?: string | null;
+  reference?: boolean;
 }
 
 export interface UplinkFormData {
@@ -77,15 +84,38 @@ function autoComplete(field: UplinkFormField): string | undefined {
 
 type Status = 'idle' | 'sending' | 'sent' | 'error';
 
+/** A hidden field's value: the page's, then the URL's, then the default. Uplink makes a reference itself. */
+function hiddenValue(field: UplinkFormField, values: Record<string, string> | undefined): string {
+  if (field.reference) return '';
+  const fromPage = values?.[field.key];
+  if (typeof fromPage === 'string' && fromPage !== '') return fromPage.slice(0, 200);
+  const fromUrl = new URLSearchParams(window.location.search).get(field.param || field.key);
+  if (fromUrl) return fromUrl.slice(0, 200);
+  return field.value ?? '';
+}
+
+/** Only an https:// link Uplink gave is followed. */
+function onward(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  try {
+    return new URL(value).protocol === 'https:' ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 /** @component UplinkFormClient */
 export function UplinkFormClient({
   form,
   className,
   unstyled = false,
+  values: pageValues,
 }: {
   form: UplinkFormData;
   className?: string;
   unstyled?: boolean;
+  /** Hidden fields' values from the page, by field key. */
+  values?: Record<string, string>;
 }) {
   const id = useId();
   const root = useRef<HTMLFormElement>(null);
@@ -94,6 +124,7 @@ export function UplinkFormClient({
   const [status, setStatus] = useState<Status>('idle');
   const [message, setMessage] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [goingTo, setGoingTo] = useState<string | null>(null);
 
   useEffect(() => {
     opened.current = Date.now();
@@ -120,6 +151,10 @@ export function UplinkFormClient({
     const data = new FormData(event.currentTarget);
     const values: Record<string, string | boolean> = {};
     for (const field of form.fields) {
+      if (field.type === 'hidden') {
+        if (!field.reference) values[field.key] = hiddenValue(field, pageValues);
+        continue;
+      }
       values[field.key] = field.type === 'checkbox' ? data.get(field.key) === 'on' : String(data.get(field.key) ?? '');
     }
     setStatus('sending');
@@ -134,14 +169,24 @@ export function UplinkFormClient({
         hp: String(data.get('uplink_website') ?? ''),
         elapsed_ms: Date.now() - opened.current,
       });
-      const body = (await response.json().catch(() => ({}))) as { error?: string; fields?: Record<string, string> };
+      const body = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        fields?: Record<string, string>;
+        redirect_url?: unknown;
+      };
       if (response.ok) {
+        const next = onward(body.redirect_url);
+        setGoingTo(next);
         setStatus('sent');
+        if (next) window.location.assign(next);
         return;
       }
+      const fieldErrors = body.fields && typeof body.fields === 'object' ? body.fields : {};
+      // A hidden field has nowhere to show its error, so it is the form's message.
+      const hiddenError = form.fields.find((field) => field.type === 'hidden' && fieldErrors[field.key]);
       setStatus('error');
-      setErrors(body.fields && typeof body.fields === 'object' ? body.fields : {});
-      setMessage(body.error || 'Your message could not be sent. Please try again.');
+      setErrors(fieldErrors);
+      setMessage((hiddenError && fieldErrors[hiddenError.key]) || body.error || 'Your message could not be sent. Please try again.');
     } catch {
       setStatus('error');
       setMessage('Your message could not be sent. Check your connection and try again.');
@@ -160,7 +205,13 @@ export function UplinkFormClient({
       <>
         {style}
         <div className={['uplink-form-sent', className].filter(Boolean).join(' ')} role="status" data-uplink-form={form.key}>
-          {form.success_message ?? 'Thank you. Your message has been sent.'}
+          {form.success_message ?? (goingTo ? 'Thank you. Taking you to the next step…' : 'Thank you. Your message has been sent.')}
+          {goingTo ? (
+            <>
+              {' '}
+              <a href={goingTo}>Continue</a>
+            </>
+          ) : null}
         </div>
       </>
     );
@@ -178,6 +229,7 @@ export function UplinkFormClient({
         onInput={onInput}
       >
         {form.fields.map((field) => {
+          if (field.type === 'hidden') return null;
           const fieldId = `${id}-${field.key}`;
           const error = errors[field.key];
           const describedBy = [field.help ? `${fieldId}-help` : null, error ? `${fieldId}-error` : null].filter(Boolean).join(' ') || undefined;

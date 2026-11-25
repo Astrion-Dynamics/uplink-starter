@@ -82,8 +82,17 @@ export async function POST(request: Request) {
       redirect: 'manual',
       signal: AbortSignal.timeout(15000),
     });
-    const answer = (await response.json().catch(() => ({}))) as { ok?: unknown; error?: unknown; fields?: unknown };
-    if (response.ok) return Response.json({ ok: true }, { headers: NO_STORE });
+    const answer = (await response.json().catch(() => ({}))) as {
+      ok?: unknown;
+      error?: unknown;
+      fields?: unknown;
+      redirect_url?: unknown;
+    };
+    if (response.ok) {
+      // Where the form sends the visitor on to (a payment link), as Uplink worked it out: https only.
+      const next = typeof answer.redirect_url === 'string' && answer.redirect_url.startsWith('https://') ? answer.redirect_url : null;
+      return Response.json(next ? { ok: true, redirect_url: next } : { ok: true }, { headers: NO_STORE });
+    }
     if (response.status === 401 || response.status === 403 || (response.status >= 300 && response.status < 400)) {
       console.error('Uplink refused the form (' + response.status + '): check UPLINK_API_KEY and UPLINK_HOST.');
     }
