@@ -168,6 +168,8 @@ function uplinkCacheTags(
     tags.push('uplink:seo', 'uplink:content', 'uplink:business-info');
   } else if (pathname.endsWith('/forms')) {
     tags.push('uplink:forms');
+  } else if (pathname.includes('/reviews')) {
+    tags.push('uplink:reviews');
   } else if (pathname.endsWith('/announcements')) {
     tags.push('uplink:announcements');
   } else {
