@@ -201,6 +201,18 @@ function scriptJson(value: unknown): string {
   return JSON.stringify(value).replace(/</g, '\\u003c');
 }
 
+/**
+ * One schema.org JSON-LD block Uplink built, such as an offer field's json_ld
+ * (a Product with its Stripe or Square Offer). Render it beside what it
+ * describes — the buy button — so search engines see the price only where a
+ * visitor does. Renders nothing for null, so it is safe on any item:
+ *   <UplinkJsonLd data={item.fields.ticket?.json_ld} />
+ */
+export function UplinkJsonLd({ data }: { data: unknown }) {
+  if (!data || typeof data !== 'object') return null;
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: scriptJson(data) }} />;
+}
+
 /** The page's schema.org JSON-LD (page type, breadcrumbs, article). Never the FAQ — <UplinkPageQA> owns that. */
 export async function UplinkPageSeo({ path, load }: { path: string; load?: Loader }) {
   const seo = await getPageSeo(path, load);
