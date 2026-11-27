@@ -52,6 +52,10 @@ export interface UplinkProductOffer {
   availability_label: string | null;
   /** False when it is sold out or out of stock: show no Buy button. */
   available: boolean;
+  /** "monthly" or "yearly" for a recurring price (price_display already says "/ month"), or null. */
+  billing_period: 'monthly' | 'yearly' | null;
+  /** The site page people order or book on before paying, when set in Uplink; search engines are sent there. */
+  page_url: string | null;
 }
 
 export interface UplinkProduct {
@@ -115,6 +119,16 @@ function paymentLink(value: unknown): { url: string; provider: 'stripe' | 'squar
   return provider ? { url: parsed.toString(), provider } : null;
 }
 
+function pageLink(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'https:' && !parsed.username && !parsed.password ? parsed.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 function offer(value: unknown): UplinkProductOffer | null {
   const raw = record(value);
   // json_ld is there only for an offer Uplink accepted.
@@ -123,12 +137,15 @@ function offer(value: unknown): UplinkProductOffer | null {
   const price = text(raw.price_display, 40);
   if (!link || !price) return null;
   const availability = typeof raw.availability === 'string' && raw.availability in AVAILABILITY_LABELS ? raw.availability : null;
+  const billing = raw.billing_period === 'monthly' || raw.billing_period === 'yearly' ? raw.billing_period : null;
   return {
     ...link,
     price_display: price,
     availability,
     availability_label: availability ? AVAILABILITY_LABELS[availability] : null,
     available: !availability || !UNAVAILABLE.includes(availability),
+    billing_period: billing,
+    page_url: pageLink(raw.page_url),
   };
 }
 
@@ -144,7 +161,7 @@ export function parseUplinkProduct(value: unknown): UplinkProduct | null {
     id: item.id,
     slug: item.slug,
     name,
-    description: text(fields.description, 5000),
+    description: text(fields.description, 5000) ?? text(record(fields.offer)?.description, 5000),
     image: asset(fields.image),
     gallery: Array.isArray(fields.gallery)
       ? fields.gallery.map(asset).filter((a): a is UplinkImageAsset => a !== null)
